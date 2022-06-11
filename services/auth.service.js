@@ -57,7 +57,7 @@ async function registerUser(user) {
       return response;
     }
 
-    const hashedPassword = await bcrypt.hash(user.password, 10);
+    const hashedPassword = await bcrypt.hash(user.password, 14);
     sanitizedUser.password = hashedPassword;
 
     const newUser = await User.create(sanitizedUser);
