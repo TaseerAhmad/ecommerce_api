@@ -88,7 +88,7 @@ async function createReview(review, token) {
         session.startTransaction();
 
         const updatedProduct = await Product.findByIdAndUpdate(review.relatedProduct, {
-            $inc: _getIncrObjFromRating(review.rating)
+            $inc: _getIncrObjFromRating(review.rating, 1)
         }, { new: true, session: session });
 
         if (updatedProduct.rating.count % 5 === 0) {
@@ -222,6 +222,77 @@ async function getUserReview(productId, token) {
     }
 }
 
+async function deleteReview(reviewId, token) {
+    const response = new GenericResponse();
+    const session = await mongoose.startSession();
+
+    try {
+
+        if (!mongoose.isValidObjectId(reviewId)) {
+            response.statusCode = 400;
+            response.message = "Invalid Review ID";
+            return response;
+        } else {
+            reviewId = mongoose.Types.ObjectId(reviewId);
+        }
+
+        const review = await Review.findById(reviewId, {
+            relatedUser: 1,
+            relatedProduct: 1,
+            rating: 1,
+            _id: 0
+        }).lean();
+
+        if (!review) {
+            response.statusCode = 404;
+            response.message = "Review Not Found";
+            return response;
+        }
+        
+        if (review.relatedUser.toString() !== token.id) {
+            response.statusCode = 403;
+            response.message = "Illegal Action";
+            return response;
+        }
+
+        session.startTransaction();
+
+        await Review.findByIdAndDelete(reviewId, { session: session });
+
+        const updatedProduct = await Product.findByIdAndUpdate(review.relatedProduct, {
+            $inc: _getIncrObjFromRating(review.rating, -1)
+        }, { new: true, session: session });
+
+        if (updatedProduct.rating.count % 5 === 0) {
+            const avgRating = _calculateAverageRating(updatedProduct.rating);
+
+            await Product.findByIdAndUpdate(review.relatedProduct, {
+                $set: { "rating.average": avgRating }
+            }, { session: session });
+        }
+
+        await session.commitTransaction();
+
+        response.statusCode = 200;
+        response.message = "Review Deleted";
+        return response;
+
+    } catch (err) {
+        console.error(err);
+
+        if (session.inTransaction) {
+            await session.abortTransaction();
+        }
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+
+    } finally {
+        await session.endSession();
+    }
+}
+
 async function _isAlreadyReviewed(review, token) {
     const result = await Review.findOne({
         relatedProduct: review.relatedProduct,
@@ -242,8 +313,8 @@ function _calculateAverageRating(rating) {
     const avg = total / rating.count;
     const rounded = Math.round(avg * 10) / 10;
 
-    if (rounded > 5.0) {
-        throw new Error("Rating calculation error. Exceeds 5.0 calculation");
+    if (rounded > 5.0 || rounded < 0.0) {
+        throw new Error("Rating calculation error");
     }
 
     return rounded;
@@ -254,13 +325,13 @@ function _obfuscateReviewerName(firstName, lastName) {
     return `${firstName} ${obfuscatedLastName}.`;
 }
 
-function _getIncrObjFromRating(rating) {
+function _getIncrObjFromRating(rating, incBy) {
     switch (rating) {
-        case 1: return { "rating.count": 1, "rating.stats.oneStar": 1 }
-        case 2: return { "rating.count": 1, "rating.stats.twoStar": 1 }
-        case 3: return { "rating.count": 1, "rating.stats.threeStar": 1 }
-        case 4: return { "rating.count": 1, "rating.stats.fourStar": 1 }
-        case 5: return { "rating.count": 1, "rating.stats.fiveStar": 1 }
+        case 1: return { "rating.count": incBy, "rating.stats.oneStar": incBy }
+        case 2: return { "rating.count": incBy, "rating.stats.twoStar": incBy }
+        case 3: return { "rating.count": incBy, "rating.stats.threeStar": incBy }
+        case 4: return { "rating.count": incBy, "rating.stats.fourStar": incBy }
+        case 5: return { "rating.count": incBy, "rating.stats.fiveStar": incBy }
 
         default: throw new Error("Invalid rating identifier passed");
     }
@@ -269,5 +340,6 @@ function _getIncrObjFromRating(rating) {
 export {
     createReview,
     getProductReviews,
-    getUserReview
+    getUserReview,
+    deleteReview
 };
