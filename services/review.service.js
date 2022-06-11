@@ -60,6 +60,12 @@ async function createReview(review, token) {
             purchasePromise
         ]);
 
+        if (!product) {
+            response.statusCode = 400;
+            response.message = "Invalid Product";
+            return response;
+        }
+
         /*  User is attempting to review an unbought item, 
             If Merchant has disallowed such action, do not proceed.
         */
@@ -148,7 +154,7 @@ async function getProductReviews(query) {
             response.message = "Invalid Pagination";
             return response;
         }
-     
+
         const result = await Review.paginate({}, {
             offset: query.off,
             limit: query.lim,
@@ -182,13 +188,45 @@ async function getProductReviews(query) {
     }
 }
 
+async function getUserReview(productId, token) {
+    const response = new GenericResponse();
+
+    try {
+
+        if (!mongoose.isValidObjectId(productId)) {
+            response.statusCode = 400;
+            response.message = "Invalid Product ID";
+            return response;
+        }
+
+        const userReview = await Review.findOne({
+            relatedProduct: mongoose.Types.ObjectId(productId),
+            relatedUser: mongoose.Types.ObjectId(token.id)
+        }, { _id: 1, text: 1, rating: 1, createdDate: 1, isVerifiedPurchase: 1 }).lean();
+
+        response.statusCode = 200;
+        response.message = "Success";
+        response.responseData = {
+            hasReviewed: Boolean(userReview),
+            review: userReview
+        };
+
+        return response;
+
+    } catch (err) {
+        console.error(err);
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 async function _isAlreadyReviewed(review, token) {
     const result = await Review.findOne({
-        $and: [
-            { relatedProduct: review.relatedProduct },
-            { relatedUser: mongoose.Types.ObjectId(token.id) }
-        ]
-    }, { _id: 1 }).lean();
+        relatedProduct: review.relatedProduct,
+        relatedUser: mongoose.Types.ObjectId(token.id)
+    }, { _id: 1, rating: 1 }).lean();
 
     return Boolean(result);
 }
@@ -230,5 +268,6 @@ function _getIncrObjFromRating(rating) {
 
 export {
     createReview,
-    getProductReviews
+    getProductReviews,
+    getUserReview
 };

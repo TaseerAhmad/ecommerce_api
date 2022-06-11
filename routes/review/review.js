@@ -14,6 +14,16 @@ reviewRouter.get("/all", async (req, res) => {
 
 });
 
+reviewRouter.get("/user-review",
+    authenticate,
+    authorize([userRole.CUSTOMER]),
+    async (req, res) => {
+
+        const response = await reviewService.getUserReview(req.query.productId, req.token);
+        return res.status(response.statusCode).json(response);
+
+    });
+
 reviewRouter.post("/post",
     authenticate,
     authorize([userRole.CUSTOMER]),

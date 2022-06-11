@@ -16,7 +16,10 @@ const reviewSchema = new mongoose.Schema({
         type: String,
         required: true
     },
-    text: String,
+    text: {
+        type: String,
+        default: "",
+    },
     rating: {
         type: Number,
         min: 1,
