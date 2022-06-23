@@ -3,14 +3,16 @@ import "dotenv/config";
 import express from "express";
 import userAgent from "express-useragent";
 import helmet from "helmet";
+import morgan from "morgan";
 import connectDatabase from "./config/db.config.js";
-import appRoutes from "./routes/index.js";
 import { globalRateLimiter } from "./config/ratelimiter.config.js";
+import appRoutes from "./routes/index.js";
 
 const app = express();
 app.use(helmet());
 app.use(express.json());
 app.use(userAgent.express());
+app.use(morgan("tiny"));
 app.use(globalRateLimiter);
 app.use(appRoutes);
 

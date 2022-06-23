@@ -8,12 +8,14 @@ import orderRoute from "./order/order.js";
 import productRoute from "./product/product.js";
 import userRoute from "./user/user.js";
 import reviewRoute from "./review/review.js";
+import salesRoute from "./sales/sales.js";
 
 const appRoutes = express.Router();
 
 appRoutes.use("/auth", authRoute);
 appRoutes.use("/user", userRoute);
 appRoutes.use("/order", orderRoute);
+appRoutes.use("/sales", salesRoute);
 appRoutes.use("/review", reviewRoute);
 appRoutes.use("/address", addressRoute);
 appRoutes.use("/product", productRoute);

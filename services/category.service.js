@@ -1,23 +1,21 @@
 import mongoose from "mongoose";
 import validator from "validator";
 import GenericResponse from "../helpers/dto/generic.response.js";
-import Category from "../models/Category.js";
-import * as notificationService from "../services/notification.service.js";
-import CategoryRequest from "../models/CategoryRequest.js";
 import Notification from "../helpers/dto/notification.js";
 import messageState from "../helpers/message.states.js";
+import Category from "../models/Category.js";
+import CategoryRequest from "../models/CategoryRequest.js";
+import * as notificationService from "../services/notification.service.js";
 
 async function fetchAll(pagination) {
     const response = new GenericResponse();
 
     try {
-
+        
         const limit = parseInt(pagination.lim);
         const offset = parseInt(pagination.off);
-        const searchCategory = validator.trim(pagination.cat);
 
-        if (isNaN(limit) || isNaN(offset) || validator.isEmpty(searchCategory)
-            || limit < 0 || offset < 0) {
+        if (isNaN(limit) || isNaN(offset) || limit <= 0 || offset < 0) {
             response.statusCode = 400;
             response.message = "Invalid query";
             return response;
@@ -33,6 +31,7 @@ async function fetchAll(pagination) {
             offset: result.offset,
             categories: result.docs
         };
+        
         return response;
 
     } catch (err) {
@@ -165,11 +164,11 @@ async function createAddCategoryRequest(category, token) {
             description: validator.trim(category.description)
         };
 
-        if (!validator.isAlpha(sanitized.name)) {
-            response.statusCode = 400;
-            response.message = "Invalid Name";
-            return response;
-        }
+        // if (!validator.isAlpha(sanitized.name)) {
+        //     response.statusCode = 400;
+        //     response.message = "Invalid Name";
+        //     return response;
+        // }
 
         const existingCategory = await Category.findOne({
             name: new RegExp(`^${sanitized.name}$`, 'i')

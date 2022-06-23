@@ -8,12 +8,12 @@ import * as service from "../../services/category.service.js";
 const categoryRouter = express.Router();
 
 //PUBLIC ROUTE
-//all?off=&lim=&cat=
+//all?off=&lim=
 categoryRouter.get("/all", async (req, res) => {
 
     try {
 
-        if (!req.query.off || !req.query.lim || !req.query.cat) {
+        if (!req.query.off || !req.query.lim) {
             const response = new GenericResponse(400, "Invalid query format");
             return res.status(response.statusCode).json(response);
         }

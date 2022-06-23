@@ -813,6 +813,66 @@ async function getMerchantUserProducts(merchantId) {
     }
 }
 
+async function getProducts(query) {
+    const response = new GenericResponse()
+
+    try {
+        let dbQuery;
+
+        const limit = parseInt(query.lim);
+        const offset = parseInt(query.off);
+
+        if (isNaN(limit) || isNaN(offset) || limit <= 0 || offset < 0) {
+            response.statusCode = 400;
+            response.message = "Invalid query";
+            return response;
+        }
+
+        if (query.cat.toUpperCase() === "ALL") {
+            dbQuery = {
+                "controls.isPublished": true
+            }
+        } else if (!mongoose.isValidObjectId(query.cat)) {
+
+            response.statusCode = 400;
+            response.message = "Invalid Category ID";
+            return response;
+
+        } else {
+            query.cat = mongoose.Types.ObjectId(query.cat)
+            dbQuery = {
+                relatedCategory: query.cat,
+                "controls.isPublished": true
+            }
+        }
+
+        const result = await Product.paginate(dbQuery, {
+            offset: offset,
+            limit: limit,
+            lean: true,
+            select: "name price price quantity images.thumb.url images.main.url controls.isDiscounted controls.discount"
+        });
+
+        response.statusCode = 200;
+        response.message = "Success";
+        response.responseData = {
+            total: result.total,
+            limit: result.limit,
+            offset: result.offset,
+            products: result.docs
+        };
+
+        return response;
+
+    } catch (err) {
+        console.error(err)
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 export {
     createProduct,
     acceptProductRequest,
@@ -821,5 +881,6 @@ export {
     addUpdateProductRequest,
     rejectProductRequest,
     getPendingProductRequests,
-    getMerchantUserProducts
+    getMerchantUserProducts,
+    getProducts
 };
