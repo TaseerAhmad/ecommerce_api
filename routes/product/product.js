@@ -15,6 +15,19 @@ const uploadFields = upload.fields([
     { name: "main", maxCount: process.env.MAIN_IMG_LIMIT }
 ]);
 
+productRoute.get("/get", async (req, res) => {
+
+    if (!req.query.productId) {
+        const response = new GenericResponse(400, "Missing Query Field");
+        return res.status(response.statusCode).json(response)
+    }
+
+    const response = await service.getProduct(req.query.productId);
+    return res.status(response.statusCode).json(response);    
+  
+
+})
+
 productRoute.get("/all", async (req, res) => {
 
     if (!req.query.lim || !req.query.off || !req.query) {

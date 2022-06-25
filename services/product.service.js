@@ -850,7 +850,7 @@ async function getProducts(query) {
             offset: offset,
             limit: limit,
             lean: true,
-            select: "name price price quantity images.thumb.url images.main.url controls.isDiscounted controls.discount"
+            select: "name price images.thumb.url controls.isDiscounted controls.discount rating.average"
         });
 
         response.statusCode = 200;
@@ -873,6 +873,48 @@ async function getProducts(query) {
     }
 }
 
+async function getProduct(productId) {
+    const response = new GenericResponse()
+
+    try {
+
+        if (!mongoose.isValidObjectId(productId)) {
+
+            response.statusCode = 400;
+            response.message = "Invalid Product ID";
+            return response;
+
+        } else {
+            productId = mongoose.Types.ObjectId(productId)
+        }
+
+        const result = await Product.findById(productId, {
+            _id: 1,
+            name: 1,
+            description: 1,
+            productCode: 1,
+            price: 1,
+            quantity: 1,
+            controls: 1,
+            "images.main.url": 1,
+            "rating.count": 1,
+            "rating.average": 1
+        }).populate("relatedMerchant", ["brand"]).lean()
+
+        response.statusCode = 200;
+        response.message = "Success";
+        response.responseData = result;
+        return response;
+
+    } catch (err) {
+        console.error(err)
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 export {
     createProduct,
     acceptProductRequest,
@@ -882,5 +924,6 @@ export {
     rejectProductRequest,
     getPendingProductRequests,
     getMerchantUserProducts,
-    getProducts
+    getProducts,
+    getProduct
 };
