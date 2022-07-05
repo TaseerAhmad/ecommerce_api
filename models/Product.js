@@ -42,7 +42,7 @@ const ratingSubSchema = new mongoose.Schema({
         required: true
     },
     average: {
-        type: Number,
+        type: mongoose.Types.Decimal128,
         min: 0.0,
         default: 0.0,
         required: true

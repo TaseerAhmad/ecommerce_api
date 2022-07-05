@@ -896,6 +896,7 @@ async function getProduct(productId) {
             price: 1,
             quantity: 1,
             controls: 1,
+            "images.thumb.url": 1,
             "images.main.url": 1,
             "rating.count": 1,
             "rating.average": 1
@@ -915,6 +916,50 @@ async function getProduct(productId) {
     }
 }
 
+async function getCartProducts(productIds) {
+    const response = new GenericResponse();
+    try {
+     
+        const mongoIds = [];
+
+        productIds.values.forEach(id => {
+            if (mongoose.isValidObjectId(id)) {
+                mongoIds.push(mongoose.Types.ObjectId(id));
+            }
+        });
+
+        if (productIds.values.length !== mongoIds.length) {
+            response.statusCode = 400;
+            response.message = "Invalid IDs";
+            return response;
+        }
+
+        const updatedProducts = await Product.find({ _id: mongoIds}, {
+            _id: 1,
+            name: 1,
+            price: 1,
+            quantity: 1,
+            "controls.isDiscounted": 1,
+            "controls.discount": 1,
+            "images.thumb.url": 1
+        }).lean();
+
+        response.statusCode = 200;
+        response.message = "Success";
+        response.responseData = {
+            products: updatedProducts
+        }
+        return response;
+
+    } catch (err) {
+        console.error(err);
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 export {
     createProduct,
     acceptProductRequest,
@@ -925,5 +970,7 @@ export {
     getPendingProductRequests,
     getMerchantUserProducts,
     getProducts,
-    getProduct
+    getProduct,
+    getCartProducts
 };
+

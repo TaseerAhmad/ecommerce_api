@@ -23,24 +23,31 @@ productRoute.get("/get", async (req, res) => {
     }
 
     const response = await service.getProduct(req.query.productId);
-    return res.status(response.statusCode).json(response);    
-  
+    return res.status(response.statusCode).json(response);
 
 })
 
 productRoute.get("/all", async (req, res) => {
 
-    if (!req.query.lim || !req.query.off || !req.query) {
+    if (!req.query.lim || !req.query.off || !req.query.cat) {
         const response = new GenericResponse(400, "Missing Query Fields");
         return res.status(response.statusCode).json(response)
     }
 
-    
     const response = await service.getProducts(req.query);
-    return res.status(response.statusCode).json(response);    
-  
+    return res.status(response.statusCode).json(response);
+});
 
-})
+productRoute.post("/cart-products", async (req, res) => {
+
+    if (req.body.values === 0) {
+        const response = new GenericResponse(400, "Missing Product IDs");
+        return res.status(response.statusCode).json(response)
+    }
+
+    const response = await service.getCartProducts(req.body);
+    return res.status(response.statusCode).json(response);
+});
 
 productRoute.get("/pending-requests", authenticate,
     authorize([userRole.MANAGER]), async (req, res) => {
