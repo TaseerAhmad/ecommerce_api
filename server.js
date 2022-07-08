@@ -6,10 +6,12 @@ import helmet from "helmet";
 import connectDatabase from "./config/db.config.js";
 import { globalRateLimiter } from "./config/ratelimiter.config.js";
 import appRoutes from "./routes/index.js";
+import morgan from "morgan"
 
 const app = express();
 app.use(helmet());
 app.use(express.json());
+app.use(morgan("tiny"));
 app.use(userAgent.express());
 app.use(globalRateLimiter);
 app.use(appRoutes);

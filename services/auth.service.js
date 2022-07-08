@@ -165,7 +165,7 @@ async function loginUser(user) {
 }
 
 function getSignedToken(id, role, email) {
-  return jwt.sign(
+  const token = jwt.sign(
     {
       id: id,
       role: role,
@@ -176,6 +176,8 @@ function getSignedToken(id, role, email) {
       expiresIn: "30d",
     }
   );
+
+  return `Bearer ${token}`
 }
 
 export { registerUser, loginUser };

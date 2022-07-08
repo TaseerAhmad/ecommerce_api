@@ -94,8 +94,7 @@ const productSchema = new mongoose.Schema({
     quantity: {
         type: Number,
         required: true,
-        default: 0,
-        min: 0
+        default: 0
     },
     controls: {
         allowNonVerifiedBuyerReviews: {
@@ -115,7 +114,7 @@ const productSchema = new mongoose.Schema({
         },
         discount: {
             type: Number,
-            default: 0.0,
+            default: 0,
             required: true
         }
     },
