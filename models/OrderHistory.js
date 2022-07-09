@@ -1,21 +1,29 @@
 import mongoose from "mongoose";
 import orderStateSubSchema from "./OrderState.js";
 
+const productSubSchema = new mongoose.Schema({
+    productId: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: "Product"
+    },
+    quantity: {
+        type: Number,
+        min: 1,
+        required: true
+    }
+});
+
 const orderHistorySchema = new mongoose.Schema({
     relatedUser: {
         type: mongoose.Types.ObjectId,
         required: true,
         immutable: true,
+        ref: "User",
         index: true
     },
-    relatedProduct: {
-        type: mongoose.Types.ObjectId,
-        immutable: true,
-        required: true
-    },
-    thumbImage: {
-        type: String,
-        immutable: true,
+    orderItems: {
+        type: [productSubSchema],
         required: true
     },
     orderId: {
@@ -25,24 +33,6 @@ const orderHistorySchema = new mongoose.Schema({
         index: true,
         immutable: true,
         required: true
-    },
-    name: {
-        type: String,
-        immutable: true,
-        required: true
-    },
-    price: {
-        type: Number,
-        immutable: true,
-        required: true,
-        min: 0
-    },
-    quantity: {
-        type: Number,
-        immutable: true,
-        required: true,
-        default: 0,
-        min: 0
     },
     orderedOn: {
         type: Date,

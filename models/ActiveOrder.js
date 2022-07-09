@@ -12,7 +12,7 @@ const productSubSchema = new mongoose.Schema({
         min: 1,
         required: true
     }
-})
+});
 
 const activeOrderSchema = new mongoose.Schema({
     relatedUser: {

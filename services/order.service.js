@@ -1,12 +1,15 @@
 import mongoose from "mongoose";
 import validator from "validator";
 import GenericResponse from "../helpers/dto/generic.response.js";
+import Notification from "../helpers/dto/notification.js";
 import generateUniqueId from "../helpers/id.generator.js";
+import messageState from "../helpers/message.states.js";
 import orderState from "../helpers/order.states.js";
 import ActiveOrder from "../models/ActiveOrder.js";
 import OrderHistory from "../models/OrderHistory.js";
 import Product from "../models/Product.js";
 import * as stockService from "../services/stock.service.js";
+import * as notificationService from "../services/notification.service.js";
 
 async function placeOrder(customerOrder, token) {
     const response = new GenericResponse();
@@ -63,6 +66,10 @@ async function placeOrder(customerOrder, token) {
         }], { session: session });
 
         await session.commitTransaction();
+
+
+        const notification = new Notification(messageState.INFO, "Your order has been placed!", "Order", mongoose.Types.ObjectId(token.id))
+        notificationService.sendNotification(notification);
 
         response.statusCode = 201;
         response.message = "Order Placed";
@@ -165,10 +172,7 @@ async function updateOrderState(ticketId, newTicketState) {
             return response;
         }
 
-        const activeOrder = await ActiveOrder.findById(ticketId)
-            .populate("relatedProduct", [
-                "name", "price", "images.thumb.url", "quantity", "relatedMerchant", "productCode"
-            ]).lean();
+        const activeOrder = await ActiveOrder.findById(ticketId).lean();
 
         if (!activeOrder) {
             response.statusCode = 404;
@@ -365,9 +369,18 @@ async function notifyRelatedEntitiesOnStock(order) {
 }
 
 async function _revertProductQuantity(activeOrder, session) {
-    await Product.findByIdAndUpdate(activeOrder.relatedProduct._id, {
-        $inc: { quantity: activeOrder.quantity }
-    }, { session: session });
+    const revertJobs = [];
+    activeOrder.orderItems.forEach(item => {
+        const job = Product.findByIdAndUpdate(item.productId, {
+            $inc: { quantity: item.quantity }
+        }, { session: session });
+
+        revertJobs.push(job);
+    });
+    await Promise.all(revertJobs);
+    // await Product.findByIdAndUpdate(activeOrder.relatedProduct._id, {
+    //     $inc: { quantity: activeOrder.quantity }
+    // }, { session: session });
 }
 
 async function _handleOrderCancelOrFailCase(session, newTicketState, ticketId, activeOrder, response) {
@@ -391,13 +404,9 @@ async function _handleOrderCancelOrFailCase(session, newTicketState, ticketId, a
 function _buildOrderHistoryObj(ticketState, activeOrder) {
     return {
         relatedUser: activeOrder.relatedUser,
-        relatedProduct: activeOrder.relatedProduct,
+        orderItems: activeOrder.orderItems,
         orderId: activeOrder.orderId,
-        name: activeOrder.relatedProduct.name,
-        price: activeOrder.relatedProduct.price,
-        quantity: activeOrder.quantity,
         orderedOn: activeOrder.orderedOn,
-        thumbImage: activeOrder.relatedProduct.images.thumb.url,
         orderState: _getOrderStateObj(ticketState, activeOrder)
     };
 }
