@@ -4,92 +4,58 @@ import GenericResponse from "../helpers/dto/generic.response.js";
 import generateUniqueId from "../helpers/id.generator.js";
 import orderState from "../helpers/order.states.js";
 import ActiveOrder from "../models/ActiveOrder.js";
-import Address from "../models/Address.js";
 import OrderHistory from "../models/OrderHistory.js";
 import Product from "../models/Product.js";
 import * as stockService from "../services/stock.service.js";
 
-async function placeOrder(order, token) {
+async function placeOrder(customerOrder, token) {
     const response = new GenericResponse();
     const session = await mongoose.startSession();
 
     try {
 
-        if (!mongoose.isValidObjectId(order.productId) &&
-            !mongoose.isValidObjectId(order.addressId)) {
+        let hasInvalidId = false
+        customerOrder.order.forEach(item => {
+            if (!mongoose.isValidObjectId(item.productId)) {
+                hasInvalidId = true
+            } else {
+                item.productId = mongoose.Types.ObjectId(item.productId)
+            }
+        });
 
+        if (hasInvalidId) {
             response.statusCode = 400;
             response.message = "Invalid ID";
             return response;
-        } else {
-            order.productId = mongoose.Types.ObjectId(order.productId);
-            order.addressId = mongoose.Types.ObjectId(order.addressId);
         }
 
-        const orderQuantity = parseInt(order.quantity);
-
-        if (isNaN(orderQuantity) || orderQuantity <= 0 || orderQuantity >= Number.MAX_VALUE) {
-            response.statusCode = 400;
-            response.message = "Invalid Quantity Format";
-            return response;
-        }
-
-        //Enforce MAX limit on quantity
-        if (orderQuantity >= 10) {
+        if (customerOrder.order.length >= 10) {
             response.statusCode = 400;
             response.message = "Order quantity exceeds allowed limit";
             return response;
         }
 
-        const product = await Product.findById(order.productId, {
-            quantity: 1, _id: 0, relatedMerchant: 1
-        }, { session: session }).lean();
-
-        //Check product validity
-        if (!product) {
-            response.statusCode = 404;
-            response.message = "Invalid Product";
-            return response;
-        }
-
-        //Check stock quantity
-        if (product.quantity === 0) {
-            response.statusCode = 422;
-            response.message = "Out Of Stock";
-            return response;
-        }
-
-        //Check order quantity
-        if (orderQuantity > product.quantity) {
-            response.statusCode = 400;
-            response.message = "Invalid Quantity";
-            return response;
-        }
-
-        const shippingAddress = await Address.findById(order.addressId, { _id: 1, }).lean();
-
-        if (!shippingAddress) {
-            response.statusCode = 404;
-            response.message = "No Address Found";
-            return response;
-        }
-
         session.startTransaction();
 
-        //Reduce stock
-        await Product.updateOne({
-            _id: order.productId
-        }, {
-            quantity: product.quantity - orderQuantity
-        }, { session: session });
+        const updateJobs = [];
+        customerOrder.order.forEach(async (order) => {
+            const updatePromise = Product.updateOne({
+                _id: order.productId
+            }, {
+                $inc: {
+                    quantity: -Math.abs(order.quantity)
+                }
+            }, { session: session });
 
-        //Create order ticket
+            updateJobs.push(updatePromise)
+        });
+        await Promise.all(updateJobs)
+
         await ActiveOrder.create([{
             relatedUser: mongoose.Types.ObjectId(token.id),
-            relatedProduct: order.productId,
-            shippingAddress: shippingAddress._id,
+            orderItems: customerOrder.order,
+            shippingAddress: customerOrder.shippingAddress,
             orderId: generateUniqueId(12),
-            quantity: orderQuantity,
             orderState: {
                 current: orderState.VERFYING,
                 verifyTime: Date.now()
@@ -473,3 +439,4 @@ export {
     updateOrderState,
     getPendingOrderTickets
 };
+

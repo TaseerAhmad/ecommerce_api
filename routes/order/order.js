@@ -12,12 +12,12 @@ orderRouter.post("/create", authenticate,
 
         try {
             
-            if (!req.query.productId || !req.query.quantity || !req.query.addressId) {
-                const response = new GenericResponse(400, "Invalid Fields");
+            if (!req.body.order || !req.body.shippingAddress) {
+                const response = new GenericResponse(400, "Invalid Field");
                 return res.status(response.statusCode).json(response);
             }
 
-            const response = await service.placeOrder(req.query, req.token);
+            const response = await service.placeOrder(req.body, req.token);
             return res.status(response.statusCode).json(response);
 
         } catch (err) {

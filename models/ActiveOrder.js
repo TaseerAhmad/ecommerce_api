@@ -1,6 +1,19 @@
 import mongoose from "mongoose";
 import orderStateSubSchema from "./OrderState.js";
 
+const productSubSchema = new mongoose.Schema({
+    productId: {
+        type: mongoose.Types.ObjectId,
+        required: true,
+        ref: "Product"
+    },
+    quantity: {
+        type: Number,
+        min: 1,
+        required: true
+    }
+})
+
 const activeOrderSchema = new mongoose.Schema({
     relatedUser: {
         type: mongoose.Types.ObjectId,
@@ -9,13 +22,12 @@ const activeOrderSchema = new mongoose.Schema({
         index: true
     },
     shippingAddress: {
-        type: mongoose.Types.ObjectId,
-        required: true,
-        ref: "Address"
+        city: String,
+        contact: String,
+        address: String
     },
-    relatedProduct: {
-        type: mongoose.Types.ObjectId,
-        ref: "Product",
+    orderItems: {
+        type: [productSubSchema],
         required: true
     },
     orderId: {
@@ -23,11 +35,6 @@ const activeOrderSchema = new mongoose.Schema({
         minlength: 12,
         unique: true,
         index: true,
-        required: true
-    },
-    quantity: {
-        type: Number,
-        min: 1,
         required: true
     },
     orderedOn: {
