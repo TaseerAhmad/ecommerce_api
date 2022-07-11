@@ -95,7 +95,7 @@ async function createReview(review, token) {
             const avgRating = _calculateAverageRating(updatedProduct.rating);
 
             await Product.findByIdAndUpdate(review.relatedProduct, {
-                $set: { "rating.average": avgRating }
+                $set: { "rating.average": avgRating.toString() }
             }, { session: session });
         }
 

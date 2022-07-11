@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 import validator from "validator";
 import GenericResponse from "../helpers/dto/generic.response.js";
 import Notification from "../models/Notification.js";
+import User from "../models/User.js";
 
 async function getNotifications(token) {
     const response = new GenericResponse();
@@ -100,13 +101,13 @@ async function sendNotification(newNotification) {
     }
 }
 
-async function clearNotifications(userId) {
+async function clearNotifications(token) {
     const response = new GenericResponse();
 
     try {
 
         const notification = await Notification.findOne({
-            relatedUserId: mongoose.Types.ObjectId(userId)
+            relatedUser: mongoose.Types.ObjectId(token.id)
         });
 
         if (notification.messages.length === 0) {
