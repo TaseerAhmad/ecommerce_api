@@ -9,7 +9,7 @@ const reviewRouter = express.Router();
 //Paginated route
 reviewRouter.get("/all", async (req, res) => {
     
-    const response = await reviewService.getProductReviews(req.query);
+    const response = await reviewService.getProductReviews(req.query.productId);
     return res.status(response.statusCode).json(response);
 
 });

@@ -99,13 +99,12 @@ async function createReview(review, token) {
             }, { session: session });
         }
 
-        const createdReview = await Review.create([review], { session: session });
+        await Review.create([review], { session: session });
 
         await session.commitTransaction();
 
         response.statusCode = 201;
         response.message = "Review Posted";
-        response.responseData = createdReview[0];
         return response;
 
     } catch (err) {
@@ -124,59 +123,53 @@ async function createReview(review, token) {
     }
 }
 
-async function getProductReviews(query) {
+async function getProductReviews(productId) {
     const response = new GenericResponse();
 
     try {
 
-        if (!query.productId || !query.off || !query.lim) {
+        if (!productId) {
             response.statusCode = 400;
             response.message = "Invalid Fields";
             return response;
         }
 
-        if (!mongoose.isValidObjectId(query.productId)) {
+        if (!mongoose.isValidObjectId(productId)) {
             response.statusCode = 400;
             response.message = "Invalid Product ID";
             return response;
         } else {
-            query.productId = mongoose.Types.ObjectId(query.productId);
+            productId = mongoose.Types.ObjectId(productId);
         }
 
-        query.off = parseInt(query.off);
-        query.lim = parseInt(query.lim);
 
-        if (isNaN(query.off) || isNaN(query.lim) ||
-            query.off < 0 || query.lim <= 0 ||
-            query.lim === query.off || query.lim > 50) {
+        const reviews = await Review.find({
+            relatedProduct: productId
+        }, {
+            _id: 1,
+            reviewerName: 1,
+            text: 1,
+            rating: 1,
+            createdDate: 1,
+            isVerifiedPurchase: 1
+        }).lean()
 
-            response.statusCode = 400;
-            response.message = "Invalid Pagination";
-            return response;
-        }
+        // const result = await Review.paginate({}, {
+        //     offset: query.off,
+        //     limit: query.lim,
+        //     select: { reviewerName: 1, text: 1, rating: 1, createdDate: 1, isVerifiedPurchase: 1 },
+        //     lean: true,
+        //     sort: { createdDate: -1 }
+        // });
 
-        const result = await Review.paginate({}, {
-            offset: query.off,
-            limit: query.lim,
-            select: { reviewerName: 1, text: 1, rating: 1, createdDate: 1, isVerifiedPurchase: 1 },
-            lean: true,
-            sort: { createdDate: -1 }
-        });
-
-        result.docs.map((review) => {
-            delete review.id;
-            delete review._id;
-        });
+        // result.docs.map((review) => {
+        //     delete review.id;
+        //     delete review._id;
+        // });
 
         response.statusCode = 200;
         response.message = "Success";
-        response.responseData = {
-            total: result.total,
-            limit: result.limit,
-            offset: result.offset,
-            reviews: result.docs
-        };
-
+        response.responseData = reviews;
         return response;
 
     } catch (err) {
@@ -206,10 +199,7 @@ async function getUserReview(productId, token) {
 
         response.statusCode = 200;
         response.message = "Success";
-        response.responseData = {
-            hasReviewed: Boolean(userReview),
-            review: userReview
-        };
+        response.responseData = userReview;
 
         return response;
 
@@ -248,7 +238,7 @@ async function deleteReview(reviewId, token) {
             response.message = "Review Not Found";
             return response;
         }
-        
+
         if (review.relatedUser.toString() !== token.id) {
             response.statusCode = 403;
             response.message = "Illegal Action";
@@ -343,3 +333,4 @@ export {
     getUserReview,
     deleteReview
 };
+

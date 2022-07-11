@@ -19,6 +19,7 @@ async function getNotifications(token) {
         }
 
         response.statusCode = 200;
+        response.message = "Success"
         return response;
 
     } catch (err) {

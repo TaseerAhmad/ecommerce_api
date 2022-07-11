@@ -2,7 +2,7 @@ import rateLimit, { MemoryStore } from "express-rate-limit";
 
 const globalRateLimiter = rateLimit({
     windowMs: 10 * 60 * 1000, //10 minutes,
-    max: 100,
+    max: 300,
     standardHeaders: true,
     legacyHeaders: false,
     store: new MemoryStore()

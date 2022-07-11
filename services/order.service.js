@@ -8,8 +8,8 @@ import orderState from "../helpers/order.states.js";
 import ActiveOrder from "../models/ActiveOrder.js";
 import OrderHistory from "../models/OrderHistory.js";
 import Product from "../models/Product.js";
-import * as stockService from "../services/stock.service.js";
 import * as notificationService from "../services/notification.service.js";
+import * as stockService from "../services/stock.service.js";
 
 async function placeOrder(customerOrder, token) {
     const response = new GenericResponse();
@@ -54,11 +54,13 @@ async function placeOrder(customerOrder, token) {
         });
         await Promise.all(updateJobs)
 
+        const orderID = generateUniqueId(12)
+
         await ActiveOrder.create([{
             relatedUser: mongoose.Types.ObjectId(token.id),
             orderItems: customerOrder.order,
             shippingAddress: customerOrder.shippingAddress,
-            orderId: generateUniqueId(12),
+            orderId: orderID,
             orderState: {
                 current: orderState.VERFYING,
                 verifyTime: Date.now()
@@ -68,7 +70,7 @@ async function placeOrder(customerOrder, token) {
         await session.commitTransaction();
 
 
-        const notification = new Notification(messageState.INFO, "Your order has been placed!", "Order", mongoose.Types.ObjectId(token.id))
+        const notification = new Notification(messageState.INFO, "Order", `Your order has been placed!\n Order: #${orderID}`, mongoose.Types.ObjectId(token.id))
         notificationService.sendNotification(notification);
 
         response.statusCode = 201;
@@ -205,6 +207,10 @@ async function updateOrderState(ticketId, newTicketState) {
                 //Updated VERIFY --> PROCESSING
                 await ActiveOrder.findOneAndUpdate({ _id: activeOrder._id }, activeOrder);
 
+                const msg = `Your order has been verified. Currently being processed.\n Order: #${activeOrder.orderId}`;
+                const notification = new Notification(messageState.ACCEPT, "Order", msg, mongoose.Types.ObjectId(activeOrder.relatedUser))
+                notificationService.sendNotification(notification);
+
                 response.statusCode = 200;
                 response.message = "Ticket status updated to PROCESSING";
                 return response;
@@ -223,6 +229,16 @@ async function updateOrderState(ticketId, newTicketState) {
                     response);
 
                 await session.commitTransaction();
+
+
+                let msg = `Your order has failed due to some reason.\n Order: #${activeOrder.orderId}`;
+                if (newTicketState === orderState.CANCELED) {
+                    type = "cancelled";
+                    msg = `Your order has been cancelled.\n Order: #${activeOrder.orderId}`;
+                }
+
+                const notification = new Notification(messageState.REJECT, "Order", msg, mongoose.Types.ObjectId(activeOrder.relatedUser))
+                notificationService.sendNotification(notification);
 
                 return response;
             }
@@ -245,7 +261,11 @@ async function updateOrderState(ticketId, newTicketState) {
                 //Updated PROCESSING --> TRANSIT
                 await ActiveOrder.findOneAndUpdate({ _id: activeOrder._id }, activeOrder);
 
-                notifyRelatedEntitiesOnStock(activeOrder);
+                const msg = `Your order has been dispatched.\n Order: #${activeOrder.orderId}`;
+                const notification = new Notification(messageState.ACCEPT, "Order", msg, mongoose.Types.ObjectId(activeOrder.relatedUser))
+                notificationService.sendNotification(notification);
+
+                //notifyRelatedEntitiesOnStock(activeOrder); //FIX QUANTITY
 
                 response.statusCode = 200;
                 response.message = "Ticket status updated to TRANSIT";
@@ -266,6 +286,10 @@ async function updateOrderState(ticketId, newTicketState) {
 
                 await session.commitTransaction();
 
+                const msg = `Your order has failed.\n Order: #${activeOrder.orderId}`;
+                const notification = new Notification(messageState.INFO, "Order", msg, mongoose.Types.ObjectId(activeOrder.relatedUser))
+                notificationService.sendNotification(notification);
+
                 return response;
             }
         }
@@ -283,6 +307,10 @@ async function updateOrderState(ticketId, newTicketState) {
             await OrderHistory.create([_buildOrderHistoryObj(newTicketState, activeOrder)], { session: session });
 
             await session.commitTransaction();
+
+            const msg = `Your order has been delivered. Enjoy!\n Order: #${activeOrder.orderId}`;
+            const notification = new Notification(messageState.ACCEPT, "Order", msg, mongoose.Types.ObjectId(activeOrder.relatedUser))
+            notificationService.sendNotification(notification);
 
             response.statusCode = 200;
             response.message = "Order Completed";
