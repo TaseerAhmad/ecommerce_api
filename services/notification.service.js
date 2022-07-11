@@ -6,7 +6,6 @@ import User from "../models/User.js";
 
 async function getNotifications(token) {
     const response = new GenericResponse();
-
     try {
 
         const notification = await Notification.findOne({
