@@ -30,4 +30,15 @@ notificationRoute.delete("/clear", authenticate, async (req, res) => {
 
 });
 
+notificationRoute.post("/send-support-message", authenticate, async (req, res) => {
+
+    if (!req.body.subject || !req.body.message) {
+        return res.status(400).json("Missing Fields");
+    }
+
+    const response = await service.sendSupportEmailToManagement(req.token, req.body);
+    return res.status(response.statusCode).json(response);
+
+});
+
 export default notificationRoute;

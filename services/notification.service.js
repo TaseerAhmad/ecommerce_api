@@ -1,8 +1,9 @@
 import mongoose from "mongoose";
 import validator from "validator";
+import * as nodemailer from "../config/mail.config.js";
 import GenericResponse from "../helpers/dto/generic.response.js";
+import userRole from "../helpers/user.roles.js";
 import Notification from "../models/Notification.js";
-import User from "../models/User.js";
 
 async function getNotifications(token) {
     const response = new GenericResponse();
@@ -131,8 +132,42 @@ async function clearNotifications(token) {
     }
 }
 
+async function sendSupportEmailToManagement(token, support) {
+    const response = new GenericResponse();
+
+    try {
+
+        if (token.role !== userRole.CUSTOMER) {
+            response.statusCode = 403;
+            response.message = "Forbidden Action"
+            return response;
+        }
+
+        const mailOptions = {
+            from: nodemailer.sender,
+            to: token.email,
+            subject: support.subject.trim().toUpperCase(),
+            html: `<p>${support.message}</p>`
+        }
+
+        nodemailer.transporter.sendMail(mailOptions);
+
+        response.statusCode = 200;
+        response.message = "Message Sent!";
+        return response;
+
+    } catch (err) {
+        console.error(err);
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 export {
     sendNotification,
     getNotifications,
     clearNotifications,
+    sendSupportEmailToManagement
 };
