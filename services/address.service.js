@@ -34,12 +34,12 @@ async function addAddress(newAddress, token) {
         }
 
         const userId = mongoose.Types.ObjectId(token.id);
-        const user = await User.findById(userId);
-        if (user.savedDeliveryAddresses === 5) {
-            response.statusCode = 422;
-            response.message = "Address limit reached";
-            return response;
-        }
+        // const user = await User.findById(userId);
+        // if (user.savedDeliveryAddresses === 5) {
+        //     response.statusCode = 422;
+        //     response.message = "Address limit reached";
+        //     return response;
+        // }
 
         const sanitized = {
             userId: userId,
@@ -48,19 +48,21 @@ async function addAddress(newAddress, token) {
             address: trimmedAddress
         };
 
-        const session = await mongoose.startSession();
-        await session.withTransaction(async () => {
+        await Address.create([sanitized]);
 
-            await Address.create([sanitized], { session });
-            const user = await User.findById(userId, {
-                savedDeliveryAddresses: 1
-            }, { session });
+        // const session = await mongoose.startSession();
+        // await session.withTransaction(async () => {
 
-            user.savedDeliveryAddresses++;
-            await user.save({ session });
+       
+        //     const user = await User.findById(userId, {
+        //         savedDeliveryAddresses: 1
+        //     }, { session });
 
-        });
-        await session.endSession();
+        //     user.savedDeliveryAddresses++;
+        //     await user.save({ session });
+
+        // });
+        // await session.endSession();
 
         response.statusCode = 201;
         response.message = "Success";
@@ -188,29 +190,39 @@ async function deleteAddress(addressId, token) {
             response.statusCode = 400;
             response.message = "Invalid ID";
             return response;
+        } else {
+            addressId = mongoose.Types.ObjectId(addressId);
         }
 
-        addressId = mongoose.Types.ObjectId(addressId);
-
         const address = await Address.findById(addressId).lean();
+
         if (!address) {
             response.statusCode = 404;
             response.message = "No Address Found";
             return response;
         }
 
-        const session = await mongoose.startSession();
-        await session.withTransaction(async () => {
+        if (address.userId.toString() !== token.id) {
+            response.statusCode = 403;
+            response.message = "Invalid Action";
+            return response;
+        }
 
-            await Address.findByIdAndDelete(addressId, { session });
-    
-            const userId = mongoose.Types.ObjectId(token.id);
-            const user = await User.findById(userId, null, { session });
-            user.savedDeliveryAddresses--;
-            await user.save({ session });
+        await Address.findByIdAndDelete(addressId);
 
-        });
-        await session.endSession();
+        // const session = await mongoose.startSession();
+        // await session.withTransaction(async () => {
+
+        
+
+        //     const userId = mongoose.Types.ObjectId(token.id);
+        //     const user = await User.findById(userId, null, { session });
+        //     if (user.savedDeliveryAddresses !== 0) {
+        //         user.savedDeliveryAddresses--;
+        //         await user.save({ session });
+        //     }
+        // });
+        // await session.endSession();
 
         response.statusCode = 200;
         response.message = "Address Deleted";

@@ -143,11 +143,16 @@ async function sendSupportEmailToManagement(token, support) {
             return response;
         }
 
+        //  Management.find()
+
         const mailOptions = {
             from: nodemailer.sender,
-            to: token.email,
+            to: "taseer.ahmadd@gmail.com",
             subject: support.subject.trim().toUpperCase(),
-            html: `<p>${support.message}</p>`
+            html: `
+            <p>${support.message}</p>
+            <p>Requester Email: ${token.email}</p>
+            `
         }
 
         nodemailer.transporter.sendMail(mailOptions);
@@ -171,3 +176,4 @@ export {
     clearNotifications,
     sendSupportEmailToManagement
 };
+

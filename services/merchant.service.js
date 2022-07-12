@@ -95,11 +95,13 @@ async function getCustomerMerchantRequest(token) {
 
         const request = await MerchantRequest.findOne({
             requestedBy: mongoose.Types.ObjectId(token.id)
-        }, { requestedBy: 0, __v: 0 }).lean();
+        }, { _id: 1}).lean();
 
         response.statusCode = 200;
         response.message = "Success";
-        response.responseData = request;
+        response.responseData = {
+            awaitingConfirmation: Boolean(request)
+        };
         return response;
 
     } catch (err) {

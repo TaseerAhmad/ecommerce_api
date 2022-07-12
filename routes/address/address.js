@@ -73,12 +73,12 @@ addressRouter.delete("/delete", authenticate,
 
         try {
 
-            if (!req.body.id) {
+            if (!req.query.addressId) {
                 const response = new GenericResponse(400, "Invalid Field");
                 return res.status(response.statusCode).json(response);
             }
 
-            const response = await service.deleteAddress(req.body.id, req.token);
+            const response = await service.deleteAddress(req.query.addressId, req.token);
             return res.status(response.statusCode).json(response);
 
         } catch (err) {
