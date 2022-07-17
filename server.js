@@ -17,8 +17,9 @@ app.use(morgan("tiny"));
 app.use(appRoutes);
 
 connectDatabase();
+const port = process.env.PORT || 5000
 
-const server = app.listen(5000, () => {
+const server = app.listen(port, () => {
   console.log(chalk.greenBright("\n[SERVER] Server started at PORT 5000\n"));
 });
 
