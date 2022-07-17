@@ -366,6 +366,53 @@ async function getPendingOrderTickets(ticketState) {
     }
 }
 
+async function getOrderRecords(token, recordType) {
+    const response = new GenericResponse();
+
+    try {
+        const userId = mongoose.Types.ObjectId(token.id);
+        recordType = recordType.trim().toUpperCase();
+
+        if (recordType !== "CURR" && recordType !== "PAST") {
+            response.statusCode = 400;
+            response.message = "Invalid Record Type";
+            return response;
+        }
+
+        if (recordType === "CURR") {
+
+            const activeOrders = await ActiveOrder.find({ relatedUser: userId })
+                .populate("orderItems.productId", ["name", "productCode"])
+                .lean()
+                .exec();
+
+            response.statusCode = 200;
+            response.message = "Success";
+            response.responseData = activeOrders;
+            return response;
+
+        } else {
+
+            const pastOrders = OrderHistory.find({ relatedUser: userId })
+                .populate("orderItems.productId", ["name, productCode"])
+                .lean()
+                .exec();
+
+            response.statusCode = 200;
+            response.message = "Success";
+            response.responseData = pastOrders;
+            return response;
+        }
+
+    } catch (err) {
+        console.error(err);
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 async function getTicketStates() {
     const response = new GenericResponse();
 
@@ -474,6 +521,7 @@ export {
     cancelOrder,
     getTicketStates,
     updateOrderState,
-    getPendingOrderTickets
+    getPendingOrderTickets,
+    getOrderRecords
 };
 

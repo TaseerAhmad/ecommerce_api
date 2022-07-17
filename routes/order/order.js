@@ -11,7 +11,7 @@ orderRouter.post("/create", authenticate,
     authorize([userRole.CUSTOMER]), async (req, res) => {
 
         try {
-            
+
             if (!req.body.order || !req.body.shippingAddress) {
                 const response = new GenericResponse(400, "Invalid Field");
                 return res.status(response.statusCode).json(response);
@@ -94,6 +94,19 @@ orderRouter.get("/pending-orders", authenticate,
         } catch (err) {
             console.error(err);
         }
+
+    });
+
+orderRouter.get("/order-history", authenticate,
+    authorize([userRole.CUSTOMER]), async (req, res) => {
+
+        if (!req.query.type) {
+            const response = new GenericResponse(400, "Invalid Query Field");
+            return res.status(response.statusCode).json(response);
+        }
+
+        const response = await service.getOrderRecords(req.token, req.query.type);
+        return res.status(response.statusCode).json(response);
 
     });
 
