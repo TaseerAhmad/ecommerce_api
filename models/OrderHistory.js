@@ -39,6 +39,11 @@ const orderHistorySchema = new mongoose.Schema({
         immutable: true,
         required: true
     },
+    shippingAddress: {
+        city: String,
+        contact: String,
+        address: String
+    },
     orderState: orderStateSubSchema
 });
 

@@ -393,8 +393,8 @@ async function getOrderRecords(token, recordType) {
 
         } else {
 
-            const pastOrders = OrderHistory.find({ relatedUser: userId })
-                .populate("orderItems.productId", ["name, productCode"])
+            const pastOrders = await OrderHistory.find({ relatedUser: userId })
+                .populate("orderItems.productId", ["name", "productCode"])
                 .lean()
                 .exec();
 
@@ -482,6 +482,7 @@ function _buildOrderHistoryObj(ticketState, activeOrder) {
         orderItems: activeOrder.orderItems,
         orderId: activeOrder.orderId,
         orderedOn: activeOrder.orderedOn,
+        shippingAddress: activeOrder.shippingAddress,
         orderState: _getOrderStateObj(ticketState, activeOrder)
     };
 }
