@@ -50,7 +50,7 @@ productRoute.post("/cart-products", async (req, res) => {
 });
 
 productRoute.get("/pending-requests", authenticate,
-    authorize([userRole.MANAGER]), async (req, res) => {
+    authorize([userRole.MANAGER, userRole.DEO]), async (req, res) => {
 
         try {
 
@@ -73,6 +73,8 @@ productRoute.post("/add",
 
         try {
 
+            console.log(req.files);
+    
             if (req.files && Object.keys(req.files).length !== 0) {
 
                 if (req.token.role === userRole.DEO) {
@@ -84,9 +86,9 @@ productRoute.post("/add",
                     return res.status(response.statusCode).json(response);
                 }
 
-                //Super Admin
-                const response = await service.createProduct(req.body.data, req.files);
-                return res.status(response.statusCode).json(response);
+                // //Super Admin
+                // const response = await service.createProduct(req.body.data, req.files);
+                // return res.status(response.statusCode).json(response);
             }
 
             const response = new GenericResponse(422, "Error uploading images");

@@ -28,11 +28,11 @@ categoryRouter.get("/all", async (req, res) => {
 });
 
 categoryRouter.get("/pending-requests", authenticate,
-    authorize([role.MANAGER, role.SUPER_ADMIN]), async (req, res) => {
+    authorize([role.MANAGER, role.DEO]), async (req, res) => {
 
         try {
 
-            const response = await service.getPendingCategoryRequests();
+            const response = await service.getPendingCategoryRequests(req.token);
             return res.status(response.statusCode).json(response);
 
         } catch (err) {
@@ -46,13 +46,14 @@ categoryRouter.post("/add", authenticate,
 
         try {
 
-            if (!req.body.name || !req.body.description) {
+            if (!req.query.name) {
                 const response = new GenericResponse(400, "Invalid fields");
                 return res.status(response.statusCode).json(response);
             }
 
             if (req.token.role === role.DEO) {
-                const response = await service.createAddCategoryRequest(req.body, req.token);
+                req.query.description = "EMPTY DESCRIPTION";
+                const response = await service.createAddCategoryRequest(req.query, req.token);
                 return res.status(response.statusCode).json(response);
             }
 
@@ -70,7 +71,7 @@ categoryRouter.post("/update", authenticate,
 
         try {
 
-            if (!req.body.id) {
+            if (!req.query.id) {
                 return res.status(400).json({
                     message: "Invalid ID",
                     statusCode: 400
@@ -85,7 +86,7 @@ categoryRouter.post("/update", authenticate,
             }
 
             if (req.token.role === role.DEO) {
-                const response = await service.createUpdateCategoryRequest(req.body, req.token);
+                const response = await service.createUpdateCategoryRequest(req.query, req.token);
                 return res.status(response.statusCode).json(response);
             }
 

@@ -919,7 +919,7 @@ async function getProduct(productId) {
 async function getCartProducts(productIds) {
     const response = new GenericResponse();
     try {
-     
+
         const mongoIds = [];
 
         productIds.values.forEach(id => {
@@ -934,7 +934,7 @@ async function getCartProducts(productIds) {
             return response;
         }
 
-        const updatedProducts = await Product.find({ _id: mongoIds}, {
+        const updatedProducts = await Product.find({ _id: mongoIds }, {
             _id: 1,
             name: 1,
             price: 1,
@@ -960,6 +960,39 @@ async function getCartProducts(productIds) {
     }
 }
 
+async function getMerchantProducts(brand) {
+    const response = new GenericResponse();
+
+    try {
+
+        const merchant = await Merchant.findOne({
+            brand: brand
+        }).lean();
+
+        if (!merchant) {
+            response.statusCode = 404;
+            response.message = "Brand not found";
+            return response;
+        }
+
+        const products = await Product.find({
+            relatedMerchant: merchant._id
+        }).lean();
+
+        response.statusCode = 200;
+        response.message = "Success";
+        response.responseData = products;
+        return response;
+
+    } catch (err) {
+        console.error(err);
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 export {
     createProduct,
     acceptProductRequest,
@@ -971,6 +1004,7 @@ export {
     getMerchantUserProducts,
     getProducts,
     getProduct,
-    getCartProducts
+    getCartProducts,
+    getMerchantProducts
 };
 

@@ -3,6 +3,7 @@ import role from "../../helpers/user.roles.js";
 import authenticate from "../../middleware/authentication.js";
 import authorize from "../../middleware/authorization.js";
 import * as service from "../../services/merchant.service.js";
+import * as productService from "../../services/product.service.js";
 
 const merchantRoute = express.Router();
 
@@ -105,5 +106,43 @@ merchantRoute.post("/pending-request/reject",
         }
 
     });
+
+merchantRoute.get("/all",
+    authenticate,
+    authorize([role.MANAGER, role.DEO]), async (req, res) => {
+
+        try {
+
+            const response = await service.getMerchants(req.token);
+            return res.status(response.statusCode).json(response);
+
+        } catch (err) {
+            console.error(err);
+        }
+
+    });
+
+
+merchantRoute.get("/brand-products",
+    authenticate,
+    authorize([role.MANAGER, role.DEO, role.MERCHANT]), async (req, res) => {
+
+        try {
+
+            if (!req.query.brand) {
+                return res.status(400).json({
+                    message: "Brand missing"
+                });
+            }
+
+            const response = await productService.getMerchantProducts(req.query.brand)
+            return res.status(response.statusCode).json(response);
+
+        } catch (err) {
+            console.error(err);
+        }
+
+    });
+
 
 export default merchantRoute;

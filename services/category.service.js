@@ -3,6 +3,7 @@ import validator from "validator";
 import GenericResponse from "../helpers/dto/generic.response.js";
 import Notification from "../helpers/dto/notification.js";
 import messageState from "../helpers/message.states.js";
+import userRole from "../helpers/user.roles.js";
 import Category from "../models/Category.js";
 import CategoryRequest from "../models/CategoryRequest.js";
 import * as notificationService from "../services/notification.service.js";
@@ -163,12 +164,6 @@ async function createAddCategoryRequest(category, token) {
             name: validator.trim(category.name),
             description: validator.trim(category.description)
         };
-
-        // if (!validator.isAlpha(sanitized.name)) {
-        //     response.statusCode = 400;
-        //     response.message = "Invalid Name";
-        //     return response;
-        // }
 
         const existingCategory = await Category.findOne({
             name: new RegExp(`^${sanitized.name}$`, 'i')
@@ -489,10 +484,11 @@ async function createCategory(category, token, session) {
     }
 }
 
-async function getPendingCategoryRequests() {
+async function getPendingCategoryRequests(token) {
     const response = new GenericResponse();
 
     try {
+
         const pendingRequests = await CategoryRequest.find()
             .populate("requestingDeo", ["_id", "email", "firstName", "lastName"])
             .exec();

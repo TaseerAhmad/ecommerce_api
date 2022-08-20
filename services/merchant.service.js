@@ -95,7 +95,7 @@ async function getCustomerMerchantRequest(token) {
 
         const request = await MerchantRequest.findOne({
             requestedBy: mongoose.Types.ObjectId(token.id)
-        }, { _id: 1}).lean();
+        }, { _id: 1 }).lean();
 
         response.statusCode = 200;
         response.message = "Success";
@@ -248,11 +248,36 @@ async function getInventory(token) {
     }
 }
 
+async function getMerchants(token) {
+    const response = new GenericResponse();
+
+    try {
+
+        const merchants = await Merchant.find()
+            .populate("userId", ["email", "firstName", "lastName", "createdAt"])
+            .lean();
+
+        response.statusCode = 200;
+        response.message = "Success";
+        response.responseData = merchants;
+        return response;
+
+    } catch (err) {
+        console.error(err);
+
+        response.statusCode = 500;
+        response.message = "Error, try again";
+        return response;
+    }
+}
+
 export {
     applyForMerchantAccount,
     getCustomerMerchantRequest,
     getMerchantRequests,
     acceptMerchantRequest,
     rejectMerchantRequest,
-    getInventory
+    getInventory,
+    getMerchants
 };
+

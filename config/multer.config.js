@@ -18,6 +18,7 @@ const upload = multer({
     fileFilter: function (req, file, cb) {
         const fileSize = parseInt(req.headers["content-length"]);
 
+        console.log(file);
         if ((file.mimetype != "image/png" &&
             file.mimetype != "image/jpg" &&
             file.mimetype != "image/jpeg")) {

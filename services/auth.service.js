@@ -146,6 +146,7 @@ async function loginUser(user) {
     response.responseData = {
       jwt: token,
       email: existingUser.email,
+      role: existingUser.role,
       firstName: existingUser.firstName,
       lastName: existingUser.lastName,
       merchantId: existingUser.merchantId,
