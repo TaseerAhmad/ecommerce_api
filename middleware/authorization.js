@@ -16,6 +16,8 @@ function authorize(allowedRoles) {
       (allowedRole) => allowedRole === userRole
     );
 
+
+
     if (!isAllowed) {
       genericResponse.statusCode = 403;
       genericResponse.message = "Unauthorized request";

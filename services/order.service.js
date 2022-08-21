@@ -346,10 +346,23 @@ async function getPendingOrderTickets(ticketState) {
             return response;
         }
 
+        if (ticketState === orderState.ALL) {
+            const orders = await ActiveOrder.find()
+            .populate("relatedUser", ["email", "firstName"])
+            .populate("shippingAddress", ["contact", "city", "address"])
+            .populate("orderItems.productId", ["name"])
+            .lean();
+            
+            response.statusCode = 200;
+            response.message = "Success";
+            response.responseData = orders;
+            return response;
+        }
+
         const orders = await ActiveOrder.find({ "orderState.current": ticketState })
             .populate("relatedUser", ["email", "firstName"])
             .populate("shippingAddress", ["contact", "city", "address"])
-            .populate("relatedProduct", ["name"]);
+            .populate("orderItems.productId", ["name"]);
 
         response.statusCode = 200;
         response.message = "Success";

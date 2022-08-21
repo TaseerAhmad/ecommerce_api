@@ -769,6 +769,9 @@ async function getPendingProductRequests() {
             .populate("createDoc.relatedMerchant", ["brand"])
             .populate("createDoc.relatedCategory", ["name", "productCount"])
             .populate("updateDoc.relatedProductId", ["name", "relatedMerchant", "relatedCategory"])
+            .populate("deleteDoc.relatedProductId", ["name", "relatedMerchant", "relatedCategory"])
+            .populate("deleteDoc.relatedProductId.relatedMerchant", ["brand"])
+            .populate("deleteDoc.relatedProductId.relatedCategory", ["name"])
             .lean()
             .exec();
 

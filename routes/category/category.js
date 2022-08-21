@@ -27,6 +27,30 @@ categoryRouter.get("/all", async (req, res) => {
 
 });
 
+categoryRouter.delete("/delete", authenticate,
+    authorize([role.DEO]), async (req, res) => {
+
+        try {
+
+            if (!req.query.id) {
+                const response = new GenericResponse(400, "Invalid ID");
+                return res.status(response.statusCode).json(response);
+            }
+
+            if (req.token.role === role.DEO) {
+                const response = await service.createDeleteCategoryRequest(req.query.id, req.token);
+                return res.status(response.statusCode).json(response);
+            }
+
+            const response = await service.deleteCategory(req.query.id, req.token);
+            return res.status(response.statusCode).json(response);
+
+        } catch (err) {
+            console.error(err);
+        }
+
+    });
+
 categoryRouter.get("/pending-requests", authenticate,
     authorize([role.MANAGER, role.DEO]), async (req, res) => {
 
@@ -66,6 +90,48 @@ categoryRouter.post("/add", authenticate,
 
     });
 
+categoryRouter.post("/accept", authenticate,
+    authorize([role.MANAGER]), async (req, res) => {
+
+        try {
+
+            if (!req.query.id) {
+                const response = new GenericResponse(400, "Invalid ID");
+                return res.status(response.statusCode).json(response);
+            }
+
+            const response = await service.acceptCategoryRequest(req.query.id);
+            return res.status(response.statusCode).json(response);
+
+        } catch (err) {
+            console.error(err);
+        }
+
+    });
+
+categoryRouter.post("/reject", authenticate,
+    authorize([role.MANAGER]), async (req, res) => {
+
+        try {
+
+            if (!req.query.id) {
+                const response = new GenericResponse(400, "Invalid Fields");
+                return res.status(response.statusCode).json(response);
+            }
+
+            if (!req.query.reason) {
+                req.query.reason = "No Reason Provided"
+            }
+
+            const response = await service.rejectCategoryRequest(req.query);
+            return res.status(response.statusCode).json(response);
+
+        } catch (err) {
+            console.error(err);
+        }
+
+    });
+
 categoryRouter.post("/update", authenticate,
     authorize([role.DEO, role.SUPER_ADMIN]), async (req, res) => {
 
@@ -91,68 +157,6 @@ categoryRouter.post("/update", authenticate,
             }
 
             const response = await service.updateCategory(req.body);
-            return res.status(response.statusCode).json(response);
-
-        } catch (err) {
-            console.error(err);
-        }
-
-    });
-
-categoryRouter.delete("/delete", authenticate,
-    authorize([role.DEO, role.SUPER_ADMIN]), async (req, res) => {
-
-        try {
-
-            if (!req.query.id) {
-                const response = new GenericResponse(400, "Invalid ID");
-                return res.status(response.statusCode).json(response);
-            }
-
-            if (req.token.role === role.DEO) {
-                const response = await service.createDeleteCategoryRequest(req.query.id, req.token);
-                return res.status(response.statusCode).json(response);
-            }
-
-            const response = await service.deleteCategory(req.query.id, req.token);
-            return res.status(response.statusCode).json(response);
-
-        } catch (err) {
-            console.error(err);
-        }
-
-    });
-
-categoryRouter.post("/accept", authenticate,
-    authorize([role.MANAGER]), async (req, res) => {
-
-        try {
-
-            if (!req.query.id) {
-                const response = new GenericResponse(400, "Invalid ID");
-                return res.status(response.statusCode).json(response);
-            }
-
-            const response = await service.acceptCategoryRequest(req.query.id);
-            return res.status(response.statusCode).json(response);
-
-        } catch (err) {
-            console.error(err);
-        }
-
-    });
-
-categoryRouter.post("/reject", authenticate,
-    authorize([role.MANAGER, role.SUPER_ADMIN]), async (req, res) => {
-
-        try {
-
-            if (!req.query.id || !req.query.reason) {
-                const response = new GenericResponse(400, "Invalid Fields");
-                return res.status(response.statusCode).json(response);
-            }
-
-            const response = await service.rejectCategoryRequest(req.query);
             return res.status(response.statusCode).json(response);
 
         } catch (err) {

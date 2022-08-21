@@ -3,7 +3,6 @@ import validator from "validator";
 import GenericResponse from "../helpers/dto/generic.response.js";
 import Notification from "../helpers/dto/notification.js";
 import messageState from "../helpers/message.states.js";
-import userRole from "../helpers/user.roles.js";
 import Category from "../models/Category.js";
 import CategoryRequest from "../models/CategoryRequest.js";
 import * as notificationService from "../services/notification.service.js";
@@ -12,7 +11,7 @@ async function fetchAll(pagination) {
     const response = new GenericResponse();
 
     try {
-        
+
         const limit = parseInt(pagination.lim);
         const offset = parseInt(pagination.off);
 
@@ -32,7 +31,7 @@ async function fetchAll(pagination) {
             offset: result.offset,
             categories: result.docs
         };
-        
+
         return response;
 
     } catch (err) {
@@ -491,6 +490,8 @@ async function getPendingCategoryRequests(token) {
 
         const pendingRequests = await CategoryRequest.find()
             .populate("requestingDeo", ["_id", "email", "firstName", "lastName"])
+            .populate("updateDoc.updateCategoryId", ["name", "description"])
+            .lean()
             .exec();
 
         response.statusCode = 200;
@@ -519,3 +520,4 @@ export {
     createDeleteCategoryRequest,
     createUpdateCategoryRequest
 };
+

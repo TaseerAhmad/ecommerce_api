@@ -1,4 +1,5 @@
 const orderState = {
+    ALL: "ALL",
     FAILED: "FAIL", //Independent
     CANCELED: "CANCEL", //Independent
     TRANSIT: "IN_TRANSIT", //On processing complete
